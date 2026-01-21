@@ -5,9 +5,56 @@
 #include <tusb.h>
 #include "MUDDC/MainController.h"
 
+#include <string>
+
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "hardware/pwm.h"
+
+MainController::PwmEndpoint::PwmEndpoint(uint8_t pin, const VarPtrProxy<uint16_t> &raw_value,
+    const std::map<uint16_t, uint16_t> &valuePoints): slice(0), channel(0), pin(pin),
+                                                      rawValue(raw_value) {
+    if (!valuePoints.contains(0)) {
+        this->valuePoints.emplace_back(0, 0);
+    }
+
+    for (auto [raw, destVal]: valuePoints) {
+        this->valuePoints.emplace_back(raw, destVal);
+    }
+
+    if (!valuePoints.contains(MAX_VAL)) {
+        this->valuePoints.emplace_back(MAX_VAL, MAX_VAL);
+    }
+}
+
+uint16_t MainController::PwmEndpoint::calculateValue() const {
+    for (int i = 1; i < valuePoints.size(); ++i) {
+        if (valuePoints[i].first == rawValue()) {
+            return valuePoints[i].second;
+        }
+
+        if (valuePoints[i].first > rawValue()) {
+            return (valuePoints[i].second - valuePoints[i - 1].second) / (valuePoints[i].first - valuePoints[i - 1].first) * rawValue();
+        }
+    }
+    return MAX_VAL;
+}
+
+MainController::PicoExpander::PicoExpander(uint8_t address, const std::array<bool, 24> &is_input,
+                                           const std::array<bool, 24> &negate, const std::array<uint8_t, 24> &bit, ExpanderDir direction): address(address),
+                                                                                                                                           isInput(is_input),
+                                                                                                                                           negate(negate),
+                                                                                                                                           bit(bit),
+                                                                                                                                           direction(direction) {
+}
+
+MainController::PicoExpander::PicoExpander(uint8_t address, uint32_t isInputMask, uint32_t negateMask,
+    const std::array<uint8_t, 24> &bit, ExpanderDir direction): address(address), bit(bit), direction(direction) {
+    for (int i = 0; i < isInput.size(); i++) {
+        isInput[i] = isInputMask >> i & 1;
+        negate[i] = negateMask >> i & 1;
+    }
+}
 
 void MainController::initialize() {
     initializeGpio();
@@ -72,8 +119,8 @@ void MainController::addMainDeviceGpioOutput(uint8_t pin, uint8_t bit, bool nega
     mDOutputs.emplace_back(pin, bit, negate);
 }
 
-void MainController::addMainDevicePwm(uint8_t pin, const uint16_t *value, VarType varType) {
-    mPwmInputs.emplace_back(pin, const_cast<uint16_t *>(value), varType);
+void MainController::addMainDevicePwm(const PwmEndpoint &pwmEndpoint) {
+    mPwmInputs.emplace_back(pwmEndpoint);
 }
 
 void MainController::addI2cExpander(const ExpanderEndpoint &expander) {
@@ -84,11 +131,11 @@ void MainController::addPicoExpander(const PicoExpander &expander) {
     picoExpanders.emplace_back(expander);
 }
 
-void MainController::setPostTransmissionTask(const std::function<void()> &postTransmissionTask) {
-    this->postTransmissionTask = postTransmissionTask;
+void MainController::setPostTransmissionTask(const std::function<void()> &postTransmissionTaskP) {
+    postTransmissionTask = postTransmissionTaskP;
 }
 
-DatagramIn & MainController::accessDatagramIn() {
+const DatagramIn & MainController::accessDatagramIn() const {
     return datagramIn;
 }
 
@@ -118,10 +165,10 @@ void MainController::initializeI2C() {
 
 void MainController::initializePWM() {
     for (auto &pwm: mPwmInputs) {
-        gpio_set_function(pwm.pin, GPIO_FUNC_PWM);
-        pwm.slice = pwm_gpio_to_slice_num(pwm.pin);
-        pwm.channel = pwm_gpio_to_channel(pwm.pin);
-        pwm_set_wrap(pwm.slice, pwmWrap);
+        gpio_set_function(pwm.getPin(), GPIO_FUNC_PWM);
+        pwm.slice = pwm_gpio_to_slice_num(pwm.getPin());
+        pwm.channel = pwm_gpio_to_channel(pwm.getPin());
+        pwm_set_wrap(pwm.slice, PwmEndpoint::MAX_VAL);
         pwm_set_enabled(pwm.slice, true);
     }
 }
@@ -178,7 +225,27 @@ void MainController::readAdc() {
 }
 
 void MainController::readSecondDevice() {
-    //TODO implementation
+    for (const auto &expander: picoExpanders) {
+        if (expander.direction == ExpanderDir::Read || expander.direction == ExpanderDir::ReadWrite) {
+            uint32_t tmpValue = 0;
+            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander.address, reinterpret_cast<uint8_t*>(&tmpValue), 3, false, 20);
+            if (ret < 0) {
+                continue;
+            }
+
+            for (uint8_t i = 0; i < 24; ++i) {
+                if (expander.isInput[i] == true) {
+                    bool value = (tmpValue >> i) & 1;
+                    if (expander.negate[i]) {
+                        value = !value;
+                    }
+
+                    datagramOut.setSwitchState(expander.bit[i], value);
+                }
+            }
+
+        }
+    }
 }
 
 void MainController::writeGpio() {
@@ -212,45 +279,15 @@ void MainController::writeExpander() {
 
             i2c_write_timeout_us(expanderI2cLine.device, expander.address, &tmpValue, 1, false, 20);
         }
-        //TODO implement read
     }
 }
 
 void MainController::writeSecondDevice() {
-    for (const auto &expander: picoExpanders) {
-        if (expander.direction == ExpanderDir::Read || expander.direction == ExpanderDir::ReadWrite) {
-            uint32_t tmpValue = 0;
-            i2c_read_timeout_us(expanderI2cLine.device, expander.address, reinterpret_cast<uint8_t*>(&tmpValue), 3, false, 20);
-
-            for (uint8_t i = 0; i < 24; ++i) {
-                if (expander.isInput[i] == true) {
-                    bool value = (tmpValue >> i) & 1;
-                    if (expander.negate[i]) {
-                        value = !value;
-                    }
-
-                    datagramOut.setSwitchState(expander.bit[i], value);
-                }
-            }
-
-        }
-    }
-
     //TODO implement write
 }
 
 void MainController::writePwm() {
     for (const auto &pwm: mPwmInputs) {
-        uint16_t pwmValue;
-        auto varType = static_cast<uint8_t>(pwm.varType);
-        if (varType > 2) {
-            pwmValue = *pwm.value / (varType / 2);
-        } else if (varType == 4) {
-            pwmValue = *pwm.value;
-        } else {
-            pwmValue = *pwm.value * 2;
-        }
-
-        pwm_set_chan_level(pwm.slice, pwm.channel, pwmValue);
+        pwm_set_chan_level(pwm.slice, pwm.channel, pwm.calculateValue());
     }
 }

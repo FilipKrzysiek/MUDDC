@@ -3,7 +3,7 @@
 #include <tusb.h>
 
 #include "../../../lib/MUDDC/include/MUDDC/MainController.h"
-#include "pico/multicore.h"
+// #include "pico/multicore.h"
 
 enum Switches {
     UnlockOverRelay = 0,
@@ -40,20 +40,33 @@ int main() {
     mc.addMainDeviceGpioInput(16, ClearShpWatchman);
     mc.addMainDeviceGpioInput(17, RadioTelephone);
 
-    mc.addMainDevicePwm(18, &mc.accessDatagramIn().hvCurrent1(), MainController::VarType::uint16_t);
-
     MainController::ExpanderEndpoint mainControllerExpander{0x48,
         {true, true, true, true, true, true, true, true}
     };
     mainControllerExpander.direction = MainController::ExpanderDir::Read;
     mc.addI2cExpander(mainControllerExpander);
 
-    MainController::PicoExpander rp1Expander {0x20,
-        {false, false, false},
-        {false},
-        {},
-        MainController::ExpanderDir::Write
-    };
+    // MainController::PicoExpander rp1Expander {0x20,
+    //     {false, false, false},
+    //     {false},
+    //     {},
+    //     MainController::ExpanderDir::Write
+    // };
+
+    {
+        MainController::PwmEndpoint engineCurrent(18, mc.accessDatagramIn().hvCurrent1(), {});
+        mc.addMainDevicePwm(engineCurrent);
+
+        MainController::PwmEndpoint hvVoltage(19, mc.accessDatagramIn().hvVoltage(), {});
+        mc.addMainDevicePwm(hvVoltage);
+
+        MainController::PwmEndpoint lvVoltage(21, mc.accessDatagramIn().lvVoltage(), {});
+        mc.addMainDevicePwm(lvVoltage);
+
+        MainController::PwmEndpoint lvCurrent(20, mc.accessDatagramIn().lvVoltage(), {});
+        mc.addMainDevicePwm(hvVoltage);
+        //TODO make if battery on correct current, if off 0
+    }
 
     mc.initialize();
 
@@ -71,3 +84,5 @@ int main() {
     }
     return 0;
 }
+
+//TODO if disconnected keep values or set to 0?

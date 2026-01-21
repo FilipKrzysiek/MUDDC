@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdint>
 
+#include "VarPtrProxy.h"
+
 /**
  * Datagram received from Maszyna (PC)
  * @author Krzysztof Swłdek
@@ -66,19 +68,19 @@ public:
      */
     [[nodiscard]] bool indicatorState(Indicators indicatorIndex) const;
 
-    [[nodiscard]] const uint16_t &breakPress() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> breakPress() const;
 
-    [[nodiscard]] const uint16_t &pipePress() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> pipePress() const;
 
-    [[nodiscard]] const uint16_t &tankPress() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> tankPress() const;
 
-    [[nodiscard]] const uint16_t &hvVoltage() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> hvVoltage() const;
 
-    [[nodiscard]] const uint16_t &hvCurrent1() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> hvCurrent1() const;
 
-    [[nodiscard]] const uint16_t &hvCurrent2() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> hvCurrent2() const;
 
-    [[nodiscard]] const uint16_t &hvCurrent3() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> hvCurrent3() const;
 
     [[nodiscard]] uint8_t year() const;
 
@@ -94,13 +96,13 @@ public:
 
     [[nodiscard]] uint8_t millisecond() const;
 
-    [[nodiscard]] const uint32_t &odometer() const;
+    [[nodiscard]] VarPtrProxy<uint32_t> odometer() const;
 
-    [[nodiscard]] const uint16_t &lvVoltage() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> lvVoltage() const;
 
     [[nodiscard]] const uint8_t &radioChanel() const;
 
-    [[nodiscard]] const uint16_t &pantographPress() const;
+    [[nodiscard]] VarPtrProxy<uint16_t> pantographPress() const;
 
 private:
     std::array<uint8_t, 52> rawData = {};

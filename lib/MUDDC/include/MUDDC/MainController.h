@@ -5,6 +5,7 @@
 #ifndef MUDDC_MASTER_MAINCONTROLLER_H
 #define MUDDC_MASTER_MAINCONTROLLER_H
 #include <functional>
+#include <map>
 
 #include "DatagramIn.h"
 #include "DatagramOut.h"
@@ -30,7 +31,8 @@ public:
      */
     struct GpioEndpoint {
         uint8_t pin; //!< Gpio pin where is connected
-        uint8_t bit; //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
+        uint8_t bit;
+        //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
         bool negate; //!< Negate logic. true - value will be negated
     };
 
@@ -48,30 +50,36 @@ public:
      */
     struct ExpanderEndpoint {
         uint8_t address = 0; //!< Expander address
-        std::array<bool, 8> isInput {false, false, false, false, false, false, false, false}; //!< Expander output is output or input
-        std::array<bool, 8> negate {false, false, false, false, false, false, false, false}; //!< Negate read information from expander
-        std::array<uint8_t, 8> bit {0}; //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
+        std::array<bool, 8> isInput{false, false, false, false, false, false, false, false};
+        //!< Expander output is output or input
+        std::array<bool, 8> negate{false, false, false, false, false, false, false, false};
+        //!< Negate read information from expander
+        std::array<uint8_t, 8> bit{0};
+        //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
         ExpanderDir direction = ExpanderDir::ReadWrite; //!< Expander direction is input expander or input direction
 
         //TODO add constructors to initialize like struct and use masks
     };
 
-    /**
-     * Var types for PWM
-     */
-    enum class VarType: uint8_t {
-        uint8_t = 1,
-        uint16_t = 2,
-        uint32_t = 4,
-        uint64_t = 8,
-    };
 
-    struct PwmEndpoint {
-        uint8_t pin;
-        uint16_t *value;
-        VarType varType;
+    class PwmEndpoint {
+    public:
+        PwmEndpoint(uint8_t pin, const VarPtrProxy<uint16_t> &raw_value, const std::map<uint16_t, uint16_t>&valuePoints);
+
+        [[nodiscard]] const uint8_t &getPin() const {
+            return pin;
+        }
+
+        [[nodiscard]] uint16_t calculateValue() const;
+
         uint slice;
         uint8_t channel;
+        static constexpr uint16_t MAX_VAL = 0xffff;
+    private:
+        uint8_t pin;
+        VarPtrProxy<uint16_t> rawValue;
+        std::vector<std::pair<uint16_t, uint16_t>> valuePoints; //!< Inside structure <raw value, final value>
+
     };
 
     //TODO add ADC endpoint on i2c
@@ -79,14 +87,24 @@ public:
 
     struct PicoExpander {
         uint8_t address = 0; //!< Expander address
-        std::array<bool, 24> isInput {false, false, false, false, false, false, false, false}; //!< Expander output is output or input
-        std::array<bool, 24> negate {false, false, false, false, false, false, false, false}; //!< Negate read information from expander
-        std::array<uint8_t, 24> bit {false}; //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
+        std::array<bool, 24> isInput{false, false, false, false, false, false, false, false};
+        //!< Expander output is output or input
+        std::array<bool, 24> negate{false, false, false, false, false, false, false, false};
+        //!< Negate read information from expander
+        std::array<uint8_t, 24> bit{false};
+        //!< Bit in datagram input/output (calculated from first byte for indicators/buttons). For inputs are declared enum, for output declare own enum!
         ExpanderDir direction = ExpanderDir::ReadWrite; //!< Expander direction is input expander or input direction
 
         //TODO add constructors to initialize like struct and use masks
+        PicoExpander(uint8_t address, const std::array<bool, 24> &is_input, const std::array<bool, 24> &negate,
+                     const std::array<uint8_t, 24> &bit, ExpanderDir direction);
+
+        PicoExpander(uint8_t address, uint32_t isInputMask, uint32_t negateMask, const std::array<uint8_t, 24> &bit,
+                     ExpanderDir direction);
     };
+
     //TODO add endpoint second Pico with setting data bit 0 sth, bit 1 sth, bit 3 uint8_t sth ...
+    //TODO replace std::array<bool> no have specialization for bool type. Maybe std::bitset? std::array is faster but consumes a lot of more memory
 
     MainController(const I2cDevice &expander_i2_c_line, const I2cDevice &communication_i2_c_line)
         : expanderI2cLine(expander_i2_c_line),
@@ -126,16 +144,9 @@ public:
 
     /**
      * Configure data set to pi pico master board PWM and how to interpret it from datagram
-     * @param pin pin on pi pico master board
-     * @param value reference (pointer) to value which must be set on PWM device. See @rel DatagramIn
-     * @param varType type of variable
-     * @brief Usage example
-     * @code
-     * MainController mc {...};
-     * mc.addMainDevicePwm(18, &mc.accessDatagramIn().hvCurrent1(), MainController::VarType::uint16_t);
-     * @endcode
+     * @param pwmEndpoint pwm endpoint object
      */
-    void addMainDevicePwm(uint8_t pin, const uint16_t *value, VarType varType);
+    void addMainDevicePwm(const PwmEndpoint &pwmEndpoint);
 
     /**
      * Configure expander which can be as output or as input, see @rel MainController::ExpanderEndpoint
@@ -156,17 +167,16 @@ public:
     void setPostTransmissionTask(const std::function<void()> &postTransmissionTask);
 
     /**
-     *
+     * Access to read UART Input Datagram
      * @return access to datagramIn object
      */
-    DatagramIn &accessDatagramIn();
+    const DatagramIn &accessDatagramIn() const;
 
 private:
     DatagramIn datagramIn;
     DatagramOut datagramOut;
     uint32_t lastTransmissionTime = 0;
     uint32_t lastBlinkTime = 0;
-    uint16_t pwmWrap = 65535;
     static constexpr uint32_t disconnectedTimeout = 2000;
 
     static constexpr uint32_t blinkOff_notConnected = 100;
@@ -188,7 +198,8 @@ private:
     std::vector<ExpanderEndpoint> expanders;
     std::vector<PicoExpander> picoExpanders;
 
-    std::function<void()> postTransmissionTask = []{};
+    std::function<void()> postTransmissionTask = [] {
+    };
 
     void initializeGpio();
 

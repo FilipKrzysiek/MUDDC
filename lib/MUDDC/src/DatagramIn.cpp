@@ -16,32 +16,32 @@ bool DatagramIn::indicatorState(Indicators indicatorIndex) const {
     return rawData[6 + indicatorIndex / 8] >> (indicatorIndex % 8) & 1;
 }
 
-const uint16_t & DatagramIn::breakPress() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[11]);
+VarPtrProxy<uint16_t> DatagramIn::breakPress() const {
+    return VarPtrProxy<uint16_t>(&rawData[11]);
 }
 
-const uint16_t & DatagramIn::pipePress() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[13]);
+VarPtrProxy<uint16_t> DatagramIn::pipePress() const {
+    return VarPtrProxy<uint16_t>(&rawData[13]);
 }
 
-const uint16_t & DatagramIn::tankPress() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[15]);
+VarPtrProxy<uint16_t> DatagramIn::tankPress() const {
+    return VarPtrProxy<uint16_t>(&rawData[15]);
 }
 
-const uint16_t & DatagramIn::hvVoltage() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[17]);
+VarPtrProxy<uint16_t> DatagramIn::hvVoltage() const {
+    return VarPtrProxy<uint16_t>(&rawData[17]);
 }
 
-const uint16_t & DatagramIn::hvCurrent1() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[19]);
+VarPtrProxy<uint16_t> DatagramIn::hvCurrent1() const {
+    return VarPtrProxy<uint16_t>(&rawData[19]);
 }
 
-const uint16_t & DatagramIn::hvCurrent2() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[21]);
+VarPtrProxy<uint16_t> DatagramIn::hvCurrent2() const {
+    return VarPtrProxy<uint16_t>(&rawData[21]);
 }
 
-const uint16_t & DatagramIn::hvCurrent3() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[23]);
+VarPtrProxy<uint16_t> DatagramIn::hvCurrent3() const {
+    return VarPtrProxy<uint16_t>(&rawData[23]);
 }
 
 uint8_t DatagramIn::year() const {
@@ -79,18 +79,18 @@ uint8_t DatagramIn::millisecond() const {
     return msecs % 1000;
 }
 
-const uint32_t & DatagramIn::odometer() const {
-    return *reinterpret_cast<const uint32_t *>(&rawData[31]);
+VarPtrProxy<uint32_t> DatagramIn::odometer() const {
+    return VarPtrProxy<uint32_t>(&rawData[31]);
 }
 
-const uint16_t & DatagramIn::lvVoltage() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[35]);
+VarPtrProxy<uint16_t> DatagramIn::lvVoltage() const {
+    return VarPtrProxy<uint16_t>(&rawData[35]);
 }
 
-const uint8_t & DatagramIn::radioChanel() const {
+const uint8_t &DatagramIn::radioChanel() const {
     return rawData[37];
 }
 
-const uint16_t & DatagramIn::pantographPress() const {
-    return *reinterpret_cast<const uint16_t *>(&rawData[38]);
+VarPtrProxy<uint16_t> DatagramIn::pantographPress() const {
+    return VarPtrProxy<uint16_t>(&rawData[38]);
 }
