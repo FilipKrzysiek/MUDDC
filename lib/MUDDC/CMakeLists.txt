@@ -4,6 +4,11 @@ add_library(MUDDC_lib STATIC include/MUDDC/DatagramIn.h src/DatagramIn.cpp
         include/MUDDC/MainController.h src/MainController.cpp
         src/usb_descriptor.cpp
         include/MUDDC/VarPtrProxy.h
+        src/BaseController.cpp
+        include/MUDDC/BaseController.h
+        include/MUDDC/BaseDevicesAndEndpoint.h
+        src/BaseDevicesAndEndpoint.cpp
+        include/MUDDC/bitFunctions.h
 )
 
 target_include_directories(MUDDC_lib PRIVATE include)
