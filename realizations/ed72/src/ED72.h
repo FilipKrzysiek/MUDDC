@@ -15,6 +15,8 @@ public:
     void postTransmissionTask() override;
     void postReceiveAndReadDevTask() override;
 
+    void initialize() override;
+
     enum class DatOutSw: bde::datBit_t {
         MasterCtrl_B3 = -10,
         MasterCtrl_B2 = -9,
@@ -43,18 +45,18 @@ public:
         ReverserBackward = 14,
         ReverserForward = 15,
         ReverserForwardI = 16,
-
-        // UnlockOverRelay = 0,
-        // LeftDoorIndividualOpen = 1,
-        // LeftDoorCentralOpen = 2,
-        // LeftDoorCentralClose = 3,
-        // DoorBellOpen = 4,
-        // RightDoorCentralOpen = 5,
-        // RightDoorCentralClose = 6,
-        // RightDoorIndividualOpen = 7,
-        // TransformerOffAndUnlocked = 8,
-        // TransformerOn = 9,
-        // ClearShpWatchman = 10,
+        ConverterOffAndUnlocked = 17,
+        ConverterOn = 18,
+        UnlockOverloadRelay = 19,
+        LeftDoorIndividualOpen = 20,
+        LeftDoorCentralOpen = 21,
+        LeftDoorCentralClose = 22,
+        DoorBell = 23,
+        RightDoorCentralOpen = 24,
+        RightDoorCentralClose = 25,
+        RightDoorIndividualOpen = 26,
+        ClearShpWatchman = 27,
+        MainCircuitBreaker = 28,
         // RadioTelephone = 11,
     };
 
