@@ -1,7 +1,6 @@
 
 add_library(MUDDC_lib STATIC include/MUDDC/DatagramIn.h src/DatagramIn.cpp
         include/MUDDC/DatagramOut.h src/DatagramOut.cpp
-        include/MUDDC/MainController.h src/MainController.cpp
         src/usb_descriptor.cpp
         include/MUDDC/VarPtrProxy.h
         src/BaseController.cpp

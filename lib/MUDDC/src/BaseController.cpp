@@ -2,7 +2,7 @@
 // Created by Filip on 22.01.2026.
 //
 #include <bsp/board_api.h>
-#include "../include/MUDDC/BaseController.h"
+#include "MUDDC/BaseController.h"
 
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
