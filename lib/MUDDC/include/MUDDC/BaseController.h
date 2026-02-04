@@ -36,7 +36,7 @@ public:
     /**
      * Initialize all devices added in `setup` method on board (gpio, pwm, i2c)
      */
-    void initialize();
+    virtual void initialize();
 
     /**
      * UART task must be callable in endless loop

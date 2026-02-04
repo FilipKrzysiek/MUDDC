@@ -2,7 +2,7 @@
 // Created by Filip on 22.01.2026.
 //
 #include <bsp/board_api.h>
-#include "../include/MUDDC/BaseController.h"
+#include "MUDDC/BaseController.h"
 
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
@@ -86,6 +86,12 @@ void BaseController::initializeGpio() {
 void BaseController::initializeI2C() {
     i2c_init(expanderI2cLine.device, expanderI2cLine.baudrate);
     i2c_init(communicationI2cLine.device, communicationI2cLine.baudrate);
+
+    gpio_set_function(expanderI2cLine.sdaPin, GPIO_FUNC_I2C);
+    gpio_set_function(expanderI2cLine.sclPin, GPIO_FUNC_I2C);
+
+    gpio_set_function(communicationI2cLine.sdaPin, GPIO_FUNC_I2C);
+    gpio_set_function(communicationI2cLine.sclPin, GPIO_FUNC_I2C);
 }
 
 void BaseController::initializePWM() {
@@ -130,8 +136,10 @@ void BaseController::readExpanders() {
         if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir ==
             bde::CommunicationDir::ReadWrite) {
             uint8_t tmpValue = 0;
-            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, 20);
+            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, 400);
             if (ret < 0) {
+                std::string tmp = "Communication error ex2: " + std::to_string(ret) + "\n\r";
+                tud_cdc_n_write(1, tmp.c_str(), tmp.size());
                 continue;
             }
 
@@ -149,6 +157,8 @@ void BaseController::readExpanders() {
                     }
                 }
             }
+            std::string tmp = "Ex2 value: " + std::to_string(tmpValue) + " -> " + std::to_string(expander->value) + "\n\r";
+            tud_cdc_n_write(1, tmp.c_str(), tmp.size());
         }
     }
 }
@@ -162,8 +172,8 @@ void BaseController::readSecondDevice() {
     for (auto &expander: piPicoExpanders) {
         if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir == bde::CommunicationDir::ReadWrite) {
             uint32_t tmpValue = 0;
-            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address,
-                                          reinterpret_cast<uint8_t *>(&tmpValue), 3, false, 20);
+            int ret = i2c_read_timeout_us(communicationI2cLine.device, expander->address,
+                                          reinterpret_cast<uint8_t *>(&tmpValue), 3, false, 400);
             if (ret < 0) {
                 continue;
             }
