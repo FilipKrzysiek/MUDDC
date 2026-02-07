@@ -15,8 +15,8 @@ ED72::ED72(const bde::I2cDevice &expanderI2cline, const bde::I2cDevice &communic
 }
 
 void ED72::setup() {
-    // expanders.emplace_back(&ex0);
-    // expanders.emplace_back(&ex1);
+    expanders.emplace_back(&ex0);
+    expanders.emplace_back(&ex1);
     expanders.emplace_back(&ex2);
 
     piPicoExpanders.emplace_back(&rp1);
@@ -33,10 +33,6 @@ void ED72::postReceiveAndReadDevTask() {
 
 void ED72::initialize() {
     BaseController::initialize();
-
-    // Set base value
-    uint8_t zeros = 0;
-    // auto ret = i2c_write_timeout_us(expanderI2cLine.device, ex2.address, &zeros, 1, false, 20);
 }
 
 void ED72::configureMasterDevice() {
@@ -72,6 +68,14 @@ void ED72::configureExpanders() {
                                     *DatOutSw::CabinLightingIi,
                                 },
                                 bde::CommunicationDir::Read);
+
+    ex0 = bde::ExpanderEp_8(0x20, 0, 0, {
+                                DatagramIn::LineBreaker,
+                            }, bde::CommunicationDir::Write);
+
+    ex1 = bde::ExpanderEp_8(0x20, 0, 0, {
+
+                            }, bde::CommunicationDir::Write);
 
     ex2 = bde::ExpanderEp_8(0x22, 0b1111'1111, 0xff,
                             {
