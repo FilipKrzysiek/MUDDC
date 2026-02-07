@@ -122,11 +122,13 @@ void BaseController::readGpioInputs() {
     for (auto& gpio : masterDeviceInputs) {
         bool state = gpio_get(gpio.pin);
         if (gpio.negate) {
-            datagramOut.setSwitchState(gpio.bit, !state);
-            gpio.value = !state;
-        } else {
+            state = !state;
+        }
+
+        gpio.value = state;
+
+        if (gpio.bit >= 0) {
             datagramOut.setSwitchState(gpio.bit, state);
-            gpio.value = state;
         }
     }
 }
