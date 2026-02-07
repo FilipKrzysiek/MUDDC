@@ -1,8 +1,6 @@
 #include "pico/stdlib.h"
 #include <bsp/board_api.h>
 #include <tusb.h>
-
-#include "MUDDC/MainController.h"
 #include "ED72.h"
 
 int main() {
