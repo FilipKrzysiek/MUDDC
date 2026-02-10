@@ -57,6 +57,16 @@ public:
         RightDoorIndividualOpen = 26,
         ClearShpWatchman = 27,
         MainCircuitBreaker = 28,
+        RadioCommunicationAttachment = 29, 
+        SignalLampCheck = 30,
+        SignalLampCheck = 31,
+        SignalLampCheck =32,
+        Camshaft = 33,
+        FrontPantographLowered = 34,
+        FrontPantographRaised = 35,
+        RearPantographRaised = 36,
+        RightHeadlightDimmed = 37,
+        HeadlightsDimmed = 38
         // RadioTelephone = 11,
     };
 
