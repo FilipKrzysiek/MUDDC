@@ -88,7 +88,7 @@ void ED72::configureExpanders() {
     ex0 = bde::ExpanderEp_8(0x20, 0, 0, {
                                 DatagramIn::LineBreaker,
                                 DatagramIn::MotorOverload,
-                                DatagramIn::TrainStateCap,
+                                DatagramIn::TrainStateCab,
                                 DatagramIn::LockPipe,
                                 DatagramIn::ConverterOverload,
                                 DatagramIn::DoorLeftAllowed,
