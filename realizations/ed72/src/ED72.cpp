@@ -86,11 +86,24 @@ void ED72::configureExpanders() {
                                 bde::CommunicationDir::Read);
 
     ex0 = bde::ExpanderEp_8(0x20, 0, 0, {
+                                DatOutSw::EpBreak,
+                                DatOutSw::VentilatorOverload,
+                                DatOutSw::EmergencyBreak,
+                                DatOutSw::LockPipe,
+                                DatOutSw::MotorOverload,
+                                DatOutSw::DoorLeftAllowed,
+                                DatOutSw::DoorLeftOpened,
+                                DatOutSw::DoorRighAllowed,
                                 DatagramIn::LineBreaker,
                             }, bde::CommunicationDir::Write);
 
     ex1 = bde::ExpanderEp_8(0x20, 0, 0, {
-
+                                DatOutSw::DoorRightOpened,
+                                DatOutSw::CoupledHvVoltage,
+                                DatOutSw::WheelSlip,
+                                DatOutSw::Alerter,
+                                DatOutSw::Shp,
+                                DatOutSw::RadioStop,
                             }, bde::CommunicationDir::Write);
 
     ex2 = bde::ExpanderEp_8(0x22, 0b1111'1111, 0xff,
