@@ -6,6 +6,7 @@ add_executable(MUDDC_ed72 src/main.cpp
 )
 
 target_link_libraries(MUDDC_ed72 pico_stdlib)
+target_link_libraries(MUDDC_ed72 hardware_adc)
 target_link_libraries(MUDDC_ed72 MUDDC_lib)
 
 target_include_directories(MUDDC_ed72 PUBLIC ./../../lib/MUDDC/include)

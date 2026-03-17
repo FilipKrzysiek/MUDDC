@@ -5,6 +5,7 @@
 #include "ED72.h"
 #include "MUDDC/BaseDevicesAndEndpoint.h"
 #include <bsp/board_api.h>
+#include "hardware/adc.h"
 
 ED72::ED72(const bde::I2cDevice &expanderI2cline, const bde::I2cDevice &communicationI2CLine) : BaseController(
     expanderI2cline, communicationI2CLine) {
@@ -29,10 +30,16 @@ void ED72::postReceiveAndReadDevTask() {
     simulateBatteryCurrent();
     masterController();
     directionController();
+    processBrakeValve();
 }
 
 void ED72::initialize() {
     BaseController::initialize();
+
+    adc_init();
+
+    adc_gpio_init(28);
+    adc_select_input(2);
 }
 
 void ED72::configureMasterDevice() {
@@ -126,17 +133,17 @@ void ED72::masterController() {
     uint8_t checkSum = pozP + pozS + pozR + pozB1 + pozB2 + pozB3;
 
     if (pozB3 && checkSum == 6) {
-        datagramOut.setMasterController(255);
+        datagramOut.setMasterController(6);
     } else if (pozB2 && checkSum == 5) {
-        datagramOut.setMasterController(212);
+        datagramOut.setMasterController(5);
     } else if (pozB1 && checkSum == 4) {
-        datagramOut.setMasterController(170);
+        datagramOut.setMasterController(4);
     } else if (pozR && checkSum == 3) {
-        datagramOut.setMasterController(127);
+        datagramOut.setMasterController(3);
     } else if (pozS && checkSum == 2) {
-        datagramOut.setMasterController(85);
+        datagramOut.setMasterController(2);
     } else if (pozP && checkSum == 1) {
-        datagramOut.setMasterController(42);
+        datagramOut.setMasterController(1);
     } else {
         datagramOut.setMasterController(0);
     }
@@ -185,4 +192,15 @@ void ED72::simulateBatteryCurrent() {
     } else {
         lvCurrent = 0;
     }
+}
+
+void ED72::processBrakeValve() {
+    uint32_t sum = 0;
+    const uint8_t measurments = 10;
+    for (uint8_t i = 0; i < measurments; i++) {
+        sum += adc_read();
+        sleep_us(1);
+    }
+    // uint16_t result = adc_read();
+    datagramOut.setTrainBrake(sum / measurments);
 }

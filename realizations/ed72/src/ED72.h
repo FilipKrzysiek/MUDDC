@@ -85,6 +85,8 @@ private:
     void directionController();
 
     void simulateBatteryCurrent();
+
+    void processBrakeValve();
 };
 
 constexpr bde::datBit_t operator*(ED72::DatOutSw enumValue) {
