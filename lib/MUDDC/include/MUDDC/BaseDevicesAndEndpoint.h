@@ -13,6 +13,8 @@
 #include "VarPtrProxy.h"
 #include "hardware/i2c.h"
 
+#include "bitFunctions.h"
+
 namespace bde {
     using datBit_t = int8_t;
     //!< Datagram bit in buttons/ switches section. If positive value is in datagram if below 0 is only name for value

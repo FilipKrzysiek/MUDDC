@@ -72,11 +72,14 @@ private:
     uint32_t lastBlinkTime = 0;
     static constexpr uint32_t disconnectedTimeout = 2000;
 
-    static constexpr uint32_t blinkOff_notConnected = 100;
-    static constexpr uint32_t blinkOn_notConnected = 100;
+    static constexpr uint32_t blinkOff_notConnected = 500;
+    static constexpr uint32_t blinkOn_notConnected = 500;
 
-    static constexpr uint32_t blinkOff_connected = 500;
-    static constexpr uint32_t blinkOn_connected = 500;
+    static constexpr uint32_t blinkOff_connected = 100;
+    static constexpr uint32_t blinkOn_connected = 100;
+
+    static constexpr uint i2cTimeout_us = 400;
+    static constexpr uint i2cSleepBtwnTrans_us = 75;
 
     uint32_t blinkOff = blinkOff_notConnected;
     uint32_t blinkOn = blinkOn_notConnected;

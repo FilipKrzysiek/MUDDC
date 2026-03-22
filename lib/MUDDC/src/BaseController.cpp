@@ -138,7 +138,7 @@ void BaseController::readExpanders() {
         if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir ==
             bde::CommunicationDir::ReadWrite) {
             uint8_t tmpValue = 0;
-            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, 400);
+            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, i2cTimeout_us);
             if (ret < 0) {
                 std::string tmp = "Communication error ex2: " + std::to_string(ret) + "\n\r";
                 tud_cdc_n_write(1, tmp.c_str(), tmp.size());
@@ -159,6 +159,9 @@ void BaseController::readExpanders() {
                     }
                 }
             }
+
+            sleep_us(i2cSleepBtwnTrans_us);
+
             std::string tmp = "Ex2 value: " + std::to_string(tmpValue) + " -> " + std::to_string(expander->value) + "\n\r";
             tud_cdc_n_write(1, tmp.c_str(), tmp.size());
         }
@@ -175,7 +178,7 @@ void BaseController::readSecondDevice() {
         if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir == bde::CommunicationDir::ReadWrite) {
             uint32_t tmpValue = 0;
             int ret = i2c_read_timeout_us(communicationI2cLine.device, expander->address,
-                                          reinterpret_cast<uint8_t *>(&tmpValue), 3, false, 400);
+                                          reinterpret_cast<uint8_t *>(&tmpValue), 3, false, i2cTimeout_us);
             if (ret < 0) {
                 continue;
             }
@@ -192,6 +195,8 @@ void BaseController::readSecondDevice() {
                         datagramOut.setSwitchState(expander->bitInDatagram[i], tmpBitValue);
                 }
             }
+
+            sleep_us(i2cSleepBtwnTrans_us);
         }
     }
     //TODO refactor duplicated code
@@ -211,9 +216,8 @@ void BaseController::writeGpio() {
 }
 
 void BaseController::writeExpander() {
-    for (const auto &expander: expanders) {
+    for (auto &expander: expanders) {
         if (expander->overallDir == bde::CommunicationDir::Write || expander->overallDir == bde::CommunicationDir::ReadWrite) {
-            uint8_t tmpValue = 0;
             for (uint8_t i = 0; i < 8; ++i) {
                 if (expander->isInput[i] == false) {
                     bool tmpBitValue = datagramIn.indicatorState(static_cast<DatagramIn::Indicators>(expander->bitInDatagram[i]));
@@ -221,12 +225,12 @@ void BaseController::writeExpander() {
                         tmpBitValue = !tmpBitValue;
                     }
 
-                    setValueOnBit(expander->value, i, tmpBitValue);
-                    setValueOnBit(tmpValue, i, tmpBitValue);
+                    expander->setValueOnPin(i, tmpBitValue);
                 }
             }
 
-            i2c_write_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, 20);
+            i2c_write_timeout_us(expanderI2cLine.device, expander->address, &expander->value, 1, false, i2cTimeout_us);
+            sleep_us(i2cSleepBtwnTrans_us);
         }
     }
 }

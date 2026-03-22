@@ -103,13 +103,14 @@ void ED72::configureExpanders() {
                                 DatagramIn::DoorRightAllowed,
                             }, bde::CommunicationDir::Write);
 
-    ex1 = bde::ExpanderEp_8(0x20, 0, 0, {
+    ex1 = bde::ExpanderEp_8(0x21, 0, 0, {
                                DatagramIn::DoorRightOpened,
                                DatagramIn::RecorderBraking,
                                DatagramIn::MotorResistors,
                                DatagramIn::Alerter,
                                DatagramIn::Shp,
                                DatagramIn::RadioStop,
+                               DatagramIn::Alerter,
                             }, bde::CommunicationDir::Write);
 
     ex2 = bde::ExpanderEp_8(0x22, 0b1111'1111, 0xff,
