@@ -54,6 +54,8 @@ public:
 
     constexpr inline void addMasterDeviceGpioOutput(uint8_t pin, bde::datBit_t bit, bool negate = false);
 
+    bool getValueOnPin(bde::datBit_t datagramBit);
+
 
 protected:
     DatagramIn datagramIn;

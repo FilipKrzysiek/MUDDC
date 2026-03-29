@@ -31,6 +31,7 @@ void ED72::postReceiveAndReadDevTask() {
     masterController();
     directionController();
     processBrakeValve();
+    processLamps();
 }
 
 void ED72::initialize() {
@@ -95,9 +96,9 @@ void ED72::configureExpanders() {
     ex0 = bde::ExpanderEp_8(0x20, 0, 0, {
                                 DatagramIn::LineBreaker,
                                 DatagramIn::MotorOverload,
-                                DatagramIn::TrainStateCab,
-                                DatagramIn::LockPipe,
-                                DatagramIn::ConverterOverload,
+                                bde::u(VirtualDatagramIn::DoorBuzzerLamp),
+                                bde::u(VirtualDatagramIn::DoorLock),
+                                bde::u(VirtualDatagramIn::ConverterOff),
                                 DatagramIn::DoorLeftAllowed,
                                 DatagramIn::DoorLeftOpened,
                                 DatagramIn::DoorRightAllowed,
@@ -105,9 +106,9 @@ void ED72::configureExpanders() {
 
     ex1 = bde::ExpanderEp_8(0x21, 0, 0, {
                                DatagramIn::DoorRightOpened,
-                               DatagramIn::RecorderBraking,
+                               bde::u(VirtualDatagramIn::BrakeVoltageOn),
                                DatagramIn::MotorResistors,
-                               DatagramIn::Alerter,
+                               bde::u(VirtualDatagramIn::Radiotelephone),
                                DatagramIn::Shp,
                                DatagramIn::RadioStop,
                                DatagramIn::Alerter,
@@ -188,8 +189,8 @@ void ED72::directionController() {
 }
 
 void ED72::simulateBatteryCurrent() {
-    if (datagramIn.indicatorState(DatagramIn::Battery)) {
-        lvCurrent = bde::PwmEp::fromPercentage(10);
+    if (datagramIn.batteryState()) {
+        lvCurrent = bde::PwmEp::fromPercentage(3);
     } else {
         lvCurrent = 0;
     }
@@ -202,6 +203,40 @@ void ED72::processBrakeValve() {
         sum += adc_read();
         sleep_us(1);
     }
-    // uint16_t result = adc_read();
+
     datagramOut.setTrainBrake(sum / measurments);
 }
+
+void ED72::processLamps() {
+    if (datagramIn.batteryState() && rp1.getValueOnDataBit(*DatOutSw::RadioCommunicationAttachment)) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::Radiotelephone, true);
+    } else {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::Radiotelephone, false);
+    }
+
+    if (datagramIn.batteryState() && getValueOnPin(*DatOutSw::DoorBell)) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorBuzzerLamp, true);
+    } else {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorBuzzerLamp, false);
+    }
+
+    if (datagramIn.lvVoltage()() < bde::PwmEp::fromPercentage((110 * 100) / 150) && datagramIn.batteryState()) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::ConverterOff, true);
+    } else {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::ConverterOff, false);
+    }
+
+    if (datagramIn.tacho() > 10  && datagramIn.batteryState()) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorLock, true);
+    } else {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorLock, false);
+    }
+
+    if (datagramIn.batteryState() && (datagramIn.indicatorState(DatagramIn::DirBackward) || datagramIn.indicatorState(DatagramIn::DirForward))) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, true);
+    } else {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, false);
+    }
+}
+
+//TODO think about keep information about expanders data in one place

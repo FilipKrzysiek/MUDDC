@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 
+#include "BaseDevicesAndEndpoint.h"
 #include "VarPtrProxy.h"
 
 /**
@@ -50,6 +51,7 @@ public:
         None = -1
     };
 
+    DatagramIn();
 
     uint8_t * data();
 
@@ -67,6 +69,12 @@ public:
      * @return Indicator state
      */
     [[nodiscard]] bool indicatorState(Indicators indicatorIndex) const;
+
+    void setIndicatorState(Indicators indicatorIndex, bool state);
+
+    inline void setIndicatorState(bde::datBit_t datBit, bool state) {
+        setIndicatorState(static_cast<Indicators>(datBit), state);
+    }
 
     [[nodiscard]] VarPtrProxy<uint16_t> breakPress() const;
 
@@ -104,8 +112,11 @@ public:
 
     [[nodiscard]] VarPtrProxy<uint16_t> pantographPress() const;
 
+    [[nodiscard]] bool batteryState() const;
+
 private:
     std::array<uint8_t, 52> rawData = {};
+    uint32_t virtualData = 0;
 };
 
 constexpr uint32_t DatagramIn::size() const {

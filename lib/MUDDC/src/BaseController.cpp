@@ -65,6 +65,17 @@ void BaseController::blinkTask() {
     board_led_write(ledState);
 }
 
+bool BaseController::getValueOnPin(bde::datBit_t datagramBit) {
+    for (auto elem: masterDeviceInputs) {
+        if (elem.bit == datagramBit) {
+            return elem.value;
+        }
+    }
+
+    //TODO protection if not found
+    return false;
+}
+
 void BaseController::initializeGpio() {
     for (const auto& gpio : masterDeviceInputs) {
         gpio_init(gpio.pin);

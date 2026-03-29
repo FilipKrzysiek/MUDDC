@@ -4,6 +4,14 @@
 
 #include "MUDDC/DatagramIn.h"
 
+#include "MUDDC/bitFunctions.h"
+
+DatagramIn::DatagramIn() {
+    for (auto &cell: rawData) {
+        cell = 0;
+    }
+}
+
 bool DatagramIn::preambleIsValid() const {
     return rawData[0] == 0xEF && rawData[1] == 0xEF && rawData[2] == 0xEF && rawData[3] == 0xEF;
 }
@@ -13,7 +21,24 @@ const uint16_t & DatagramIn::tacho() {
 }
 
 bool DatagramIn::indicatorState(Indicators indicatorIndex) const {
-    return rawData[6 + indicatorIndex / 8] >> (indicatorIndex % 8) & 1;
+    if (indicatorIndex >= 0)
+        return getValueOnBit(rawData[6 + indicatorIndex / 8], (indicatorIndex % 8));
+
+    if (indicatorIndex < -1) {
+        int bit = indicatorIndex * -1;
+        return (virtualData >> bit) & 1;
+    }
+
+    return false;
+}
+
+void DatagramIn::setIndicatorState(Indicators indicatorIndex, bool state) {
+    if (indicatorIndex >= 0) {
+        setValueOnBit(rawData[6 + indicatorIndex / 8], indicatorIndex % 8, state);
+    } else if (indicatorIndex < -1) {
+        auto val = indicatorIndex * -1;
+        setValueOnBit(virtualData, val, state);
+    }
 }
 
 VarPtrProxy<uint16_t> DatagramIn::breakPress() const {
@@ -93,4 +118,8 @@ const uint8_t &DatagramIn::radioChanel() const {
 
 VarPtrProxy<uint16_t> DatagramIn::pantographPress() const {
     return VarPtrProxy<uint16_t>(&rawData[38]);
+}
+
+bool DatagramIn::batteryState() const {
+    return indicatorState(DatagramIn::Battery);
 }

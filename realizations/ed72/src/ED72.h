@@ -70,6 +70,14 @@ public:
         // RadioTelephone = 11,
     };
 
+    enum class VirtualDatagramIn: bde::datBit_t {
+        Radiotelephone = -2,
+        DoorBuzzerLamp = -3,
+        ConverterOff = -4,
+        DoorLock = -5,
+        BrakeVoltageOn = -6,
+    };
+
 private:
     bde::ExpanderEp_8 ex0;
     bde::ExpanderEp_8 ex1;
@@ -87,10 +95,16 @@ private:
     void simulateBatteryCurrent();
 
     void processBrakeValve();
+
+    void processLamps();
 };
 
 constexpr bde::datBit_t operator*(ED72::DatOutSw enumValue) {
     return static_cast<std::underlying_type_t<ED72::DatOutSw>>(enumValue);
+}
+
+constexpr bde::datBit_t operator*(ED72::VirtualDatagramIn enumValue) {
+    return bde::u(enumValue);
 }
 
 
