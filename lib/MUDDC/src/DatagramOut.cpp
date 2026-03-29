@@ -27,3 +27,9 @@ void DatagramOut::setTrainBrake(uint16_t value) {
 void DatagramOut::setIndependentBrake(uint16_t value) {
     *reinterpret_cast<uint16_t*>(&rawData[14]) = value;
 }
+
+void DatagramOut::setOutDataTo0() {
+    for (auto &byte: rawData) {
+        byte = 0;
+    }
+}

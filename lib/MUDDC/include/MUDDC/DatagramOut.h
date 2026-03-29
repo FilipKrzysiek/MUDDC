@@ -59,6 +59,8 @@ public:
     void setTrainBrake(uint16_t value);
 
     void setIndependentBrake(uint16_t value);
+
+    void setOutDataTo0();
 private:
     std::array<uint8_t, 20> rawData{};
 };

@@ -18,10 +18,16 @@ void BaseController::initialize() {
 void BaseController::cdcTask() {
     if (tud_cdc_n_available(0)) {
         auto count = tud_cdc_n_read(0, datagramIn.data(), datagramIn.size());
-        readDevices();
-        postReceiveAndReadDevTask();
 
         if (count > 0 && datagramIn.preambleIsValid()) {
+            if (!isConnected) {
+                datagramOut.setOutDataTo0();
+                isConnected = true;
+            } else {
+                readDevices();
+                postReceiveAndReadDevTask();
+            }
+
             tud_cdc_n_write(0, datagramOut.data(), datagramOut.size());
 
             tud_cdc_n_write_flush(0);
@@ -42,6 +48,7 @@ void BaseController::blinkTask() {
     if (board_millis() - lastTransmissionTime > disconnectedTimeout) {
         blinkOff = blinkOff_notConnected;
         blinkOn = blinkOn_notConnected;
+        isConnected = false;
     } else {
         blinkOff = blinkOff_connected;
         blinkOn = blinkOn_connected;
@@ -76,6 +83,11 @@ bool BaseController::getValueOnPin(bde::datBit_t datagramBit) {
     return false;
 }
 
+void BaseController::initializeI2cDevices() {
+    writeExpander();
+    writeSecondDevice();
+}
+
 void BaseController::initializeGpio() {
     for (const auto& gpio : masterDeviceInputs) {
         gpio_init(gpio.pin);
@@ -103,6 +115,8 @@ void BaseController::initializeI2C() {
 
     gpio_set_function(communicationI2cLine.sdaPin, GPIO_FUNC_I2C);
     gpio_set_function(communicationI2cLine.sclPin, GPIO_FUNC_I2C);
+
+    initializeI2cDevices();
 }
 
 void BaseController::initializePWM() {

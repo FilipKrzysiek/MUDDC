@@ -69,6 +69,12 @@ protected:
     std::vector<bde::ExpanderEp_8*> expanders;
     std::vector<bde::PiPicoExpanderEp*> piPicoExpanders;
 
+    /**
+     * Initialize I2C devices by set to all devices value 0 on write elements.
+     * Behaviour can be overridden! Must be call after initializing all expanders!
+     */
+    virtual void initializeI2cDevices();
+
 private:
     uint32_t lastTransmissionTime = 0;
     uint32_t lastBlinkTime = 0;
@@ -86,6 +92,7 @@ private:
     uint32_t blinkOff = blinkOff_notConnected;
     uint32_t blinkOn = blinkOn_notConnected;
     bool ledState = false;
+    bool isConnected = false;
 
     void initializeGpio();
 
