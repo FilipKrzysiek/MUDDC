@@ -86,6 +86,9 @@ private:
 
     uint16_t lvCurrent = 0;
 
+    std::array<uint8_t, 2> prevMasterCtrl = {0, 0};
+    bool prevOutside = false;
+
     void configureMasterDevice();
     void configureExpanders();
 

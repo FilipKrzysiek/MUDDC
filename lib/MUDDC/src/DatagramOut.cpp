@@ -29,7 +29,7 @@ void DatagramOut::setIndependentBrake(uint16_t value) {
 }
 
 void DatagramOut::setOutDataTo0() {
-    for (auto &byte: rawData) {
-        byte = 0;
+    for (int i = 4; i < rawData.size(); ++i) {
+        rawData[i] = 0;
     }
 }

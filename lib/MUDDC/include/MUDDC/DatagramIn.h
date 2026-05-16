@@ -55,6 +55,8 @@ public:
 
     uint8_t * data();
 
+    std::array<uint8_t, 52> &dataArray();
+
     [[nodiscard]] const uint8_t * data() const;
 
     [[nodiscard]] constexpr uint32_t size() const;
@@ -129,6 +131,10 @@ inline uint8_t * DatagramIn::data() {
 
 inline const uint8_t * DatagramIn::data() const {
     return rawData.data();
+}
+
+inline std::array<uint8_t, 52> & DatagramIn::dataArray() {
+    return rawData;
 }
 
 #endif //MUDDC_MASTER_DATAGRAMIN_H

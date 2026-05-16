@@ -44,18 +44,18 @@ void ED72::initialize() {
 }
 
 void ED72::configureMasterDevice() {
-    addMasterDeviceGpioInput(2, *DatOutSw::ClearShpWatchman);
-    addMasterDeviceGpioInput(3, *DatOutSw::ConverterOn);
-    addMasterDeviceGpioInput(4, *DatOutSw::ConverterOffAndUnlocked);
-    addMasterDeviceGpioInput(5, *DatOutSw::RightDoorIndividualOpen);
-    addMasterDeviceGpioInput(6, *DatOutSw::RightDoorCentralOpen);
-    addMasterDeviceGpioInput(7, *DatOutSw::RightDoorCentralClose);
-    addMasterDeviceGpioInput(8, *DatOutSw::DoorBell);
-    addMasterDeviceGpioInput(9, *DatOutSw::LeftDoorCentralClose);
-    addMasterDeviceGpioInput(10, *DatOutSw::LeftDoorCentralOpen);
-    addMasterDeviceGpioInput(11, *DatOutSw::LeftDoorIndividualOpen);
-    addMasterDeviceGpioInput(16, *DatOutSw::MainCircuitBreaker);
-    addMasterDeviceGpioInput(17, *DatOutSw::UnlockOverloadRelay);
+    addMasterDeviceGpioInput(2, *DatOutSw::ClearShpWatchman, true);
+    addMasterDeviceGpioInput(3, *DatOutSw::ConverterOn, true);
+    addMasterDeviceGpioInput(4, *DatOutSw::ConverterOffAndUnlocked, true);
+    addMasterDeviceGpioInput(5, *DatOutSw::RightDoorIndividualOpen, true);
+    addMasterDeviceGpioInput(6, *DatOutSw::RightDoorCentralOpen, true);
+    addMasterDeviceGpioInput(7, *DatOutSw::RightDoorCentralClose, true);
+    addMasterDeviceGpioInput(8, *DatOutSw::DoorBell, true);
+    addMasterDeviceGpioInput(9, *DatOutSw::LeftDoorCentralClose, true);
+    addMasterDeviceGpioInput(10, *DatOutSw::LeftDoorCentralOpen, true);
+    addMasterDeviceGpioInput(11, *DatOutSw::LeftDoorIndividualOpen, true);
+    addMasterDeviceGpioInput(16, *DatOutSw::MainCircuitBreaker, true);
+    addMasterDeviceGpioInput(17, *DatOutSw::UnlockOverloadRelay, true);
     addMasterDeviceGpioInput(22, *DatOutSw::DirCntr_Wk6, true);
 
     addMasterDevicePwm(18, datagramIn.hvCurrent1(), {});
@@ -65,7 +65,7 @@ void ED72::configureMasterDevice() {
 }
 
 void ED72::configureExpanders() {
-    rp1 = bde::PiPicoExpanderEp(0x18, 0b1111'1111'1111'1111'1111'1111, 0, {
+    rp1 = bde::PiPicoExpanderEp(0x18, 0b1111'1111'1111'1111'1111'1111, 0b1111'1111'1111'1111'1111'1111, {
                                     *DatOutSw::LeftLamp,
                                     *DatOutSw::RightLamp,
                                     *DatOutSw::TopLamp,
@@ -89,7 +89,7 @@ void ED72::configureExpanders() {
                                     *DatOutSw::SignalLampCheckI,
                                     *DatOutSw::SignalLampCheckIi,
                                     *DatOutSw::SignalLampCheckIii,
-                                    *DatOutSw::RadioCommunicationAttachment,        
+                                    *DatOutSw::RadioCommunicationAttachment,
                                 },
                                 bde::CommunicationDir::Read);
 
@@ -105,13 +105,13 @@ void ED72::configureExpanders() {
                             }, bde::CommunicationDir::Write);
 
     ex1 = bde::ExpanderEp_8(0x21, 0, 0, {
-                               DatagramIn::DoorRightOpened,
-                               bde::u(VirtualDatagramIn::BrakeVoltageOn),
-                               DatagramIn::MotorResistors,
-                               bde::u(VirtualDatagramIn::Radiotelephone),
-                               DatagramIn::Shp,
-                               DatagramIn::RadioStop,
-                               DatagramIn::Alerter,
+                                DatagramIn::DoorRightOpened,
+                                bde::u(VirtualDatagramIn::BrakeVoltageOn),
+                                DatagramIn::MotorResistors,
+                                bde::u(VirtualDatagramIn::Radiotelephone),
+                                DatagramIn::Shp,
+                                DatagramIn::RadioStop,
+                                DatagramIn::Alerter,
                             }, bde::CommunicationDir::Write);
 
     ex2 = bde::ExpanderEp_8(0x22, 0b1111'1111, 0xff,
@@ -121,7 +121,6 @@ void ED72::configureExpanders() {
                                 *DatOutSw::DirCntr_Wk7, *DatOutSw::DirCntr_Wk9
                             },
                             bde::CommunicationDir::Read);
-
 }
 
 void ED72::masterController() {
@@ -133,22 +132,43 @@ void ED72::masterController() {
     bool pozB3 = ex2.getValueOnDataBit(*DatOutSw::MasterCtrl_B3);
 
     uint8_t checkSum = pozP + pozS + pozR + pozB1 + pozB2 + pozB3;
+    uint8_t valToSet = 0;
 
     if (pozB3 && checkSum == 6) {
-        datagramOut.setMasterController(6);
+        valToSet = 6;
     } else if (pozB2 && checkSum == 5) {
-        datagramOut.setMasterController(5);
+        valToSet = 5;
     } else if (pozB1 && checkSum == 4) {
-        datagramOut.setMasterController(4);
+        valToSet = 4;
     } else if (pozR && checkSum == 3) {
-        datagramOut.setMasterController(3);
+        valToSet = 3;
     } else if (pozS && checkSum == 2) {
-        datagramOut.setMasterController(2);
+        valToSet = 2;
     } else if (pozP && checkSum == 1) {
-        datagramOut.setMasterController(1);
-    } else {
-        datagramOut.setMasterController(0);
+        valToSet = 1;
     }
+
+    // uint8_t newValue = valToSet;
+    // //TODO make it better
+    // if (valToSet > prevMasterCtrl[0]) {
+    //     if (valToSet - prevMasterCtrl[0] > 1) {
+    //         newValue = prevMasterCtrl[0];
+    //         prevOutside = true;
+    //     }
+    // } else {
+    //     if (prevMasterCtrl[0] - valToSet > 1) {
+    //         newValue = prevMasterCtrl[0];
+    //         prevOutside = true;
+    //     }
+    // }
+    // uint8_t newValue = std::max(valToSet, std::max(prevMasterCtrl[0], prevMasterCtrl[1]));
+
+    // if (std::abs(valToSet - prevMasterCtrl[0]) < std::abs(valToSet - prevMasterCtrl[1]))
+
+    prevMasterCtrl[1] = prevMasterCtrl[0];
+    prevMasterCtrl[0] = valToSet;
+
+    datagramOut.setMasterController(valToSet);
 }
 
 void ED72::directionController() {
@@ -160,7 +180,8 @@ void ED72::directionController() {
 
     bool wk9 = ex2.getValueOnDataBit(*DatOutSw::DirCntr_Wk9);
 
-    std::string tmp = "DirCtrl: " + std::to_string(wk6) + ", " + std::to_string(wk7) + ", " + std::to_string(wk9) + "\n\r";
+    std::string tmp = "DirCtrl: " + std::to_string(wk6) + ", " + std::to_string(wk7) + ", " + std::to_string(wk9) +
+                      "\n\r";
     tud_cdc_n_write(1, tmp.c_str(), tmp.size());
 
     if (!wk6 && wk7 && wk9) {
@@ -226,13 +247,14 @@ void ED72::processLamps() {
         datagramIn.setIndicatorState(*VirtualDatagramIn::ConverterOff, false);
     }
 
-    if (datagramIn.tacho() > 10  && datagramIn.batteryState()) {
+    if (datagramIn.tacho() > 10 && datagramIn.batteryState()) {
         datagramIn.setIndicatorState(*VirtualDatagramIn::DoorLock, true);
     } else {
         datagramIn.setIndicatorState(*VirtualDatagramIn::DoorLock, false);
     }
 
-    if (datagramIn.batteryState() && (datagramIn.indicatorState(DatagramIn::DirBackward) || datagramIn.indicatorState(DatagramIn::DirForward))) {
+    if (datagramIn.batteryState() && (datagramIn.indicatorState(DatagramIn::DirBackward) || datagramIn.indicatorState(
+                                          DatagramIn::DirForward))) {
         datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, true);
     } else {
         datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, false);
