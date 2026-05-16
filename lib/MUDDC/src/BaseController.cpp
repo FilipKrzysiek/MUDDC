@@ -84,12 +84,13 @@ bool BaseController::getValueOnPin(bde::datBit_t datagramBit) {
 }
 
 void BaseController::initializeI2cDevices() {
+    sleep_ms(1);
     writeExpander();
     writeSecondDevice();
 }
 
 void BaseController::initializeGpio() {
-    for (const auto& gpio : masterDeviceInputs) {
+    for (const auto &gpio: masterDeviceInputs) {
         gpio_init(gpio.pin);
         gpio_set_dir(gpio.pin, GPIO_IN);
 
@@ -100,7 +101,7 @@ void BaseController::initializeGpio() {
         }
     }
 
-    for (const auto& gpio : masterDeviceOutputs) {
+    for (const auto &gpio: masterDeviceOutputs) {
         gpio_init(gpio.pin);
         gpio_set_dir(gpio.pin, GPIO_OUT);
     }
@@ -120,7 +121,7 @@ void BaseController::initializeI2C() {
 }
 
 void BaseController::initializePWM() {
-    for (auto& pwm : masterDevicePwm) {
+    for (auto &pwm: masterDevicePwm) {
         gpio_set_function(pwm.getPin(), GPIO_FUNC_PWM);
         pwm.slice = pwm_gpio_to_slice_num(pwm.getPin());
         pwm.channel = pwm_gpio_to_channel(pwm.getPin());
@@ -144,7 +145,7 @@ void BaseController::writeDevices() {
 }
 
 void BaseController::readGpioInputs() {
-    for (auto& gpio : masterDeviceInputs) {
+    for (auto &gpio: masterDeviceInputs) {
         bool state = gpio_get(gpio.pin);
         if (gpio.negate) {
             state = !state;
@@ -159,11 +160,12 @@ void BaseController::readGpioInputs() {
 }
 
 void BaseController::readExpanders() {
-    for (auto& expander : expanders) {
+    for (auto &expander: expanders) {
         if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir ==
             bde::CommunicationDir::ReadWrite) {
             uint8_t tmpValue = 0;
-            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false, i2cTimeout_us);
+            int ret = i2c_read_timeout_us(expanderI2cLine.device, expander->address, &tmpValue, 1, false,
+                                          i2cTimeout_us);
             if (ret < 0) {
                 std::string tmp = "Communication error ex2: " + std::to_string(ret) + "\n\r";
                 tud_cdc_n_write(1, tmp.c_str(), tmp.size());
@@ -187,7 +189,8 @@ void BaseController::readExpanders() {
 
             sleep_us(i2cSleepBtwnTrans_us);
 
-            std::string tmp = "Ex2 value: " + std::to_string(tmpValue) + " -> " + std::to_string(expander->value) + "\n\r";
+            std::string tmp = "Ex2 value: " + std::to_string(tmpValue) + " -> " + std::to_string(expander->value) +
+                              "\n\r";
             tud_cdc_n_write(1, tmp.c_str(), tmp.size());
         }
     }
@@ -195,12 +198,12 @@ void BaseController::readExpanders() {
 
 void BaseController::readAdc() {
     //TODO implement read master device Adc
-
 }
 
 void BaseController::readSecondDevice() {
     for (auto &expander: piPicoExpanders) {
-        if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir == bde::CommunicationDir::ReadWrite) {
+        if (expander->overallDir == bde::CommunicationDir::Read || expander->overallDir ==
+            bde::CommunicationDir::ReadWrite) {
             uint32_t tmpValue = 0;
             int ret = i2c_read_timeout_us(communicationI2cLine.device, expander->address,
                                           reinterpret_cast<uint8_t *>(&tmpValue), 3, false, i2cTimeout_us);
@@ -242,10 +245,12 @@ void BaseController::writeGpio() {
 
 void BaseController::writeExpander() {
     for (auto &expander: expanders) {
-        if (expander->overallDir == bde::CommunicationDir::Write || expander->overallDir == bde::CommunicationDir::ReadWrite) {
+        if (expander->overallDir == bde::CommunicationDir::Write || expander->overallDir ==
+            bde::CommunicationDir::ReadWrite) {
             for (uint8_t i = 0; i < 8; ++i) {
                 if (expander->isInput[i] == false) {
-                    bool tmpBitValue = datagramIn.indicatorState(static_cast<DatagramIn::Indicators>(expander->bitInDatagram[i]));
+                    bool tmpBitValue = datagramIn.indicatorState(
+                        static_cast<DatagramIn::Indicators>(expander->bitInDatagram[i]));
                     if (expander->negate[i]) {
                         tmpBitValue = !tmpBitValue;
                     }
