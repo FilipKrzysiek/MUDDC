@@ -57,6 +57,7 @@ void ED72::configureMasterDevice() {
     addMasterDeviceGpioInput(16, *DatOutSw::MainCircuitBreaker, true);
     addMasterDeviceGpioInput(17, *DatOutSw::UnlockOverloadRelay, true);
     addMasterDeviceGpioInput(22, *DatOutSw::DirCntr_Wk6, true);
+    addMasterDeviceGpioInput(26, *DatOutSw::HornHighTone, true);
 
     addMasterDevicePwm(18, datagramIn.hvCurrent1(), {});
     addMasterDevicePwm(19, datagramIn.hvVoltage(), {});
@@ -66,7 +67,7 @@ void ED72::configureMasterDevice() {
 
 void ED72::configureExpanders() {
     rp1 = bde::PiPicoExpanderEp(0x18, 0b1111'1111'1111'1111'1111'1111, 0b1111'1111'1111'1111'1111'1111, {
-                                    *DatOutSw::LeftLamp,
+                                    *DatOutSw::LeftLamp, // 0
                                     *DatOutSw::RightLamp,
                                     *DatOutSw::TopLamp,
                                     *DatOutSw::LeftRedLamp,
@@ -76,18 +77,18 @@ void ED72::configureExpanders() {
                                     *DatOutSw::CabinLightingIi,
                                     *DatOutSw::EnabledInteriorLighting,
                                     *DatOutSw::DisabledInteriorLighting,
+                                    *DatOutSw::HornLowTone, // 10
                                     *DatOutSw::AllPantographsLoweredDown,
-                                    *DatOutSw::Compressor,
                                     *DatOutSw::UnlockCompressor,
-                                    *DatOutSw::Buzzer,
+                                    *DatOutSw::Compressor,
                                     *DatOutSw::HeadlightsDimmed,
                                     *DatOutSw::RightHeadlightDimmed,
                                     *DatOutSw::RearPantographRaised,
                                     *DatOutSw::FrontPantographRaised,
                                     *DatOutSw::FrontPantographLowered,
                                     *DatOutSw::Camshaft,
-                                    *DatOutSw::SignalLampCheckI,
-                                    *DatOutSw::HornLowTone, //22
+                                    *DatOutSw::SignalLampCheckI, // 20
+                                    *DatOutSw::SignalLampCheckIi,
                                     *DatOutSw::SignalLampCheckIii,
                                     *DatOutSw::RadioCommunicationAttachment,
                                 },
