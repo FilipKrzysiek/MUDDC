@@ -87,7 +87,7 @@ void ED72::configureExpanders() {
                                     *DatOutSw::FrontPantographLowered,
                                     *DatOutSw::Camshaft,
                                     *DatOutSw::SignalLampCheckI,
-                                    *DatOutSw::SignalLampCheckIi,
+                                    *DatOutSw::HornLowTone, //22
                                     *DatOutSw::SignalLampCheckIii,
                                     *DatOutSw::RadioCommunicationAttachment,
                                 },
@@ -148,6 +148,14 @@ void ED72::masterController() {
         valToSet = 1;
     }
 
+    uint8_t newValue = 0;
+
+    if (valToSet == 0 && prevMasterCtrl[0] != 1) {
+        newValue = prevMasterCtrl[0];
+    } else {
+        newValue = valToSet;
+    }
+
     // uint8_t newValue = valToSet;
     // //TODO make it better
     // if (valToSet > prevMasterCtrl[0]) {
@@ -168,7 +176,7 @@ void ED72::masterController() {
     prevMasterCtrl[1] = prevMasterCtrl[0];
     prevMasterCtrl[0] = valToSet;
 
-    datagramOut.setMasterController(valToSet);
+    datagramOut.setMasterController(newValue);
 }
 
 void ED72::directionController() {

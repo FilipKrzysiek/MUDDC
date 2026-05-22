@@ -5,6 +5,8 @@ add_executable(MUDDC_ed72 src/main.cpp
         src/ED72.h
 )
 
+set_target_properties(MUDDC_lib PROPERTIES VERSION 0.0.5)
+
 target_link_libraries(MUDDC_ed72 pico_stdlib)
 target_link_libraries(MUDDC_ed72 hardware_adc)
 target_link_libraries(MUDDC_ed72 MUDDC_lib)

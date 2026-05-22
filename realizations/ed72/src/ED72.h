@@ -66,7 +66,9 @@ public:
         FrontPantographRaised = 35,
         RearPantographRaised = 36,
         RightHeadlightDimmed = 37,
-        HeadlightsDimmed = 38
+        HeadlightsDimmed = 38,
+        HornLowTone = 39,
+        HornHighTone = 40
         // RadioTelephone = 11,
     };
 

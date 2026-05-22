@@ -10,6 +10,8 @@ add_library(MUDDC_lib STATIC include/MUDDC/DatagramIn.h src/DatagramIn.cpp
         include/MUDDC/bitFunctions.h
 )
 
+set_target_properties(MUDDC_lib PROPERTIES VERSION 0.0.2)
+
 target_include_directories(MUDDC_lib PRIVATE include)
 target_include_directories(MUDDC_lib PUBLIC src)
 
