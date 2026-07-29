@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.16)
+
+add_executable(MUDDC_ed72_expandModule1 src/main.cpp
+
+)
+
+set(MUDDC_ed72_expandModule1_VERSION 0.0.8)
+
+set_target_properties(MUDDC_ed72_expandModule1 PROPERTIES VERSION ${MUDDC_ed72_expandModule1_VERSION})
+
+target_link_libraries(MUDDC_ed72_expandModule1 pico_stdlib hardware_i2c pico_i2c_slave pico_multicore pico_status_led)
+target_link_libraries(MUDDC_ed72_expandModule1 x27stepper)
+
+target_include_directories(MUDDC_ed72_expandModule1 PUBLIC ${CMAKE_SOURCE_DIR}/lib/x27Stepper/include)
+target_include_directories(MUDDC_ed72_expandModule1 PRIVATE src)
+
+set(MUDDC_ed72_expandModule1_fileName "MUDDC_ed72_expandModule1-${MUDDC_ed72_expandModule1_VERSION}")
+
+set_target_properties(MUDDC_ed72_expandModule1 PROPERTIES OUTPUT_NAME "${MUDDC_ed72_expandModule1_fileName}")
+
+pico_enable_stdio_usb(MUDDC_ed72_expandModule1 0)
+pico_enable_stdio_uart(MUDDC_ed72_expandModule1 0)
+
+pico_add_extra_outputs(MUDDC_ed72_expandModule1)
+
+# -- Copy files to bin
+
+set(MUDDC_ed72_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/ed72")
+
+add_custom_command(TARGET MUDDC_ed72_expandModule1 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_CURRENT_BINARY_DIR}/${MUDDC_ed72_expandModule1_fileName}.uf2"
+        "${MUDDC_ed72_OUTPUT_DIR}/${MUDDC_ed72_expandModule1_fileName}.uf2"
+        COMMENT "Copying Main uf2 file to destination dir"
+)

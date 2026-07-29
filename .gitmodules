@@ -1,0 +1,3 @@
+[submodule "lib/PiPicoExpander"]
+	path = lib/PiPicoExpander
+	url = https://github.com/FilipKrzysiek/PiPicoExpander.git
