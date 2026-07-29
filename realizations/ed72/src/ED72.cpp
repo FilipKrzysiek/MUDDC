@@ -32,6 +32,7 @@ void ED72::postReceiveAndReadDevTask() {
     directionController();
     processBrakeValve();
     processLamps();
+    processTestLamps();
 }
 
 void ED72::initialize() {
@@ -228,13 +229,14 @@ void ED72::simulateBatteryCurrent() {
 
 void ED72::processBrakeValve() {
     uint32_t sum = 0;
-    const uint8_t measurments = 10;
+    const uint8_t measurments = 20;
     for (uint8_t i = 0; i < measurments; i++) {
         sum += adc_read();
-        sleep_us(1);
+        sleep_us(5);
     }
 
     datagramOut.setTrainBrake(sum / measurments);
+
 }
 
 void ED72::processLamps() {
@@ -267,6 +269,31 @@ void ED72::processLamps() {
         datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, true);
     } else {
         datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, false);
+    }
+}
+
+void ED72::processTestLamps() {
+    if (datagramIn.batteryState() && rp1.getValueOnDataBit(*DatOutSw::SignalLampCheckI)) {
+        datagramIn.setIndicatorState(*VirtualDatagramIn::Radiotelephone, true);
+        datagramIn.setIndicatorState(*VirtualDatagramIn::BrakeVoltageOn, true);
+        datagramIn.setIndicatorState(DatagramIn::MotorResistors, true);
+    }
+
+    if (datagramIn.batteryState() && rp1.getValueOnDataBit(*DatOutSw::SignalLampCheckIi)) {
+        // TODO
+    }
+
+    if (datagramIn.batteryState() && rp1.getValueOnDataBit(*DatOutSw::SignalLampCheckIii)) {
+        datagramIn.setIndicatorState(DatagramIn::LineBreaker, true);
+        datagramIn.setIndicatorState(DatagramIn::MotorOverload, true);
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorBuzzerLamp, true);
+        datagramIn.setIndicatorState(*VirtualDatagramIn::DoorLock, true);
+        datagramIn.setIndicatorState(*VirtualDatagramIn::ConverterOff, true);
+        datagramIn.setIndicatorState(DatagramIn::RadioStop, true);
+        datagramIn.setIndicatorState(DatagramIn::DoorLeftAllowed, true);
+        datagramIn.setIndicatorState(DatagramIn::DoorLeftOpened, true);
+        datagramIn.setIndicatorState(DatagramIn::DoorRightAllowed, true);
+        datagramIn.setIndicatorState(DatagramIn::DoorRightOpened, true);
     }
 }
 

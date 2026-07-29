@@ -102,6 +102,8 @@ private:
     void processBrakeValve();
 
     void processLamps();
+
+    void processTestLamps();
 };
 
 constexpr bde::datBit_t operator*(ED72::DatOutSw enumValue) {
