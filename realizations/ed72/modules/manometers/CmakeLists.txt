@@ -4,7 +4,7 @@ add_executable(MUDDC_ed72_expandModule1 src/main.cpp
 
 )
 
-set(MUDDC_ed72_expandModule1_VERSION 0.0.8)
+set(MUDDC_ed72_expandModule1_VERSION 0.0.9)
 
 set_target_properties(MUDDC_ed72_expandModule1 PROPERTIES VERSION ${MUDDC_ed72_expandModule1_VERSION})
 

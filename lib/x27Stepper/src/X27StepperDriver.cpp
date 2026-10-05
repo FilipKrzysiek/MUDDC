@@ -6,12 +6,14 @@
 
 #include <cmath>
 #include <iostream>
-
+#include "pico/mutex.h"
 #include "hardware/clocks.h"
 
-X27StepperDriver::X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint16_t maxStep,
-                     uint16_t wrap) : pin1(pin1),
-                                      pin2(pin2), pin3(pin3), pin4(pin4), maxStep(maxStep), wrap(wrap), middleMicroStep(12) {
+X27StepperDriver::X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, mutex_t *mutex,
+                                   uint16_t maxStep, uint16_t wrap) : pin1(pin1), pin2(pin2), pin3(pin3), pin4(pin4),
+                                                                      mutex(mutex),
+                                                                      maxStep(maxStep), wrap(wrap),
+                                                                      middleMicroStep(12) {
     microSteps = {
         {
             {.pin1 = 0.80, .pin2 = 0, .pin3 = 0.80, .pin4 = 0},
@@ -44,36 +46,30 @@ X27StepperDriver::X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uin
     initPwm();
 }
 
-void X27StepperDriver::prepareOnlyBack(uint8_t time_s) {
-    if (maxStep / (time_s * 1000) < 5) {
+void X27StepperDriver::prepareOnlyBack(uint8_t time_s, uint16_t fromStep) {
+    if (fromStep / (time_s * 1000) < 5) {
         time_s = 2;
     }
 
-    actualStep = maxStep;
+    actualStep = fromStep * singleStepSize();
+    singleStepTime = (time_s * 1000 * 1000) / actualStep;
     targetStep = 0;
-    add_repeating_timer_us(time_s * 1000 * 1000 / (maxStep * microSteps.size() / 2 ), x27DriverCallback, this, &timer);
-}
-
-void X27StepperDriver::prepareOnlyBackSlow0(uint8_t coarseZeroing_s, uint8_t fineZeroing_s) {
-    prepareOnlyBack(coarseZeroing_s);
-    sleep_ms(fineZeroing_s * 1000);
-
-    actualStep = 20;
-    targetStep = 0;
-    add_repeating_timer_us(fineZeroing_s * 1000 * 1000 / (maxStep * microSteps.size() / 2 ), x27DriverCallback, this, &timer);
 }
 
 void X27StepperDriver::goToStepIn(uint16_t step, uint16_t ms) {
-    // cancel_repeating_timer(&timer);
+    mutex_enter_blocking(mutex);
+    targetStep = step * singleStepSize();
+    uint16_t stepDiff = std::abs(actualStep - targetStep);
+    uint16_t stepTime = (ms * 1000) / stepDiff;
 
-    uint16_t stepDiff = std::abs(actualStep - step);
-    if (step <= maxStep && ms / stepDiff >= 5) {
-        targetStep = step;
-
-        add_repeating_timer_us(ms * 1000 / (stepDiff * microSteps.size() / 2 ), x27DriverCallback, this, &timer);
-    } else {
-        std::cout << "Not set!" << std::endl;
+    if (stepTime > 1000) {
+        stepsStep = 1;
+    } else if (stepTime > 500) {
+        stepsStep = 2;
     }
+
+    singleStepTime = std::max(stepTime * stepsStep, 300);
+    mutex_exit(mutex);
 }
 
 void X27StepperDriver::initPwm() {
@@ -89,53 +85,35 @@ void X27StepperDriver::initPwm() {
     initSinglePwm(pwm4, pin4);
 }
 
-void X27StepperDriver::initSinglePwm(PwmPin& pwmData,uint8_t pin) {
+void X27StepperDriver::initSinglePwm(PwmPin &pwmData, uint8_t pin) {
     gpio_set_function(pin, GPIO_FUNC_PWM);
     pwmData.slice = pwm_gpio_to_slice_num(pin);
     pwmData.channel = pwm_gpio_to_channel(pin);
     pwm_init(pwmData.slice, &pwmConfig, true);
 }
 
-bool X27StepperDriver::makeStep() {
-    if (actualStep < targetStep) {
-        if (actualMicroStep >= microSteps.size()) {
-            actualMicroStep = 0;
-            ++actualStep;
-        } else {
-            ++actualMicroStep;
-        }
-    } else {
-        if (actualMicroStep < 0) {
-            actualMicroStep = microSteps.size() - 1;
-            --actualStep;
-        } else {
-            --actualMicroStep;
+void X27StepperDriver::makeStep() {
+    if (time_us_64() - lastUpdateTime > singleStepTime) {
+        lastUpdateTime = time_us_64();
+
+        if (actualStep != targetStep) {
+            if (!mutex_try_enter(mutex, nullptr)) {
+                lastUpdateTime -= singleStepTime;
+                return;
+            }
+            if (actualStep < targetStep) {
+                actualStep += stepsStep;
+            } else {
+                actualStep -= stepsStep;
+            }
+
+            uint16_t microStepToApply = actualStep % microSteps.size();
+            mutex_exit(mutex);
+
+            pwm_set_chan_level(pwm1.slice, pwm1.channel, wrap - (microSteps[microStepToApply].pin1 * wrap));
+            pwm_set_chan_level(pwm2.slice, pwm2.channel, wrap - (microSteps[microStepToApply].pin2 * wrap));
+            pwm_set_chan_level(pwm3.slice, pwm3.channel, wrap - (microSteps[microStepToApply].pin3 * wrap));
+            pwm_set_chan_level(pwm4.slice, pwm4.channel, wrap - (microSteps[microStepToApply].pin4 * wrap));
         }
     }
-
-    if (actualMicroStep == middleMicroStep) {
-        if (actualStep < targetStep) {
-            ++actualStep;
-        } else {
-            --actualStep;
-        }
-    }
-
-    pwm_set_chan_level(pwm1.slice, pwm1.channel, wrap - (microSteps[actualMicroStep].pin1 * wrap));
-    pwm_set_chan_level(pwm2.slice, pwm2.channel, wrap - (microSteps[actualMicroStep].pin2 * wrap));
-    pwm_set_chan_level(pwm3.slice, pwm3.channel, wrap - (microSteps[actualMicroStep].pin3 * wrap));
-    pwm_set_chan_level(pwm4.slice, pwm4.channel, wrap - (microSteps[actualMicroStep].pin4 * wrap));
-
-    if (targetStep == actualStep) {
-        cancel_repeating_timer(&timer);
-    }
-
-    return targetStep == actualStep;
-}
-
-bool x27DriverCallback(repeating_timer_t *timer) {
-    auto x27Driver = static_cast<X27StepperDriver *>(timer->user_data);
-    x27Driver->makeStep();
-
-    return true;
 }

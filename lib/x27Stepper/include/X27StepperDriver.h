@@ -8,6 +8,7 @@
 #include <array>
 
 #include "hardware/pwm.h"
+#include "pico/mutex.h"
 #include "pico/stdlib.h"
 
 
@@ -27,34 +28,48 @@ public:
         uint channel = 0;
     };
 
-    X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint16_t maxStep = 315, uint16_t wrap = 255);
+    X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, mutex_t *mutex, uint16_t maxStep = 315,
+                     uint16_t wrap = 255);
 
-    void prepareOnlyBack(uint8_t time_s = 4);
+    inline void prepareOnlyBackFull(uint8_t time_s = 4) {
+        prepareOnlyBack(time_s, maxStep);
+    }
 
-    void prepareOnlyBackSlow0(uint8_t coarseZeroing_s = 4, uint8_t fineZeroing_s = 2);
+    void prepareOnlyBack(uint8_t time_s = 1, uint16_t fromStep = 20);
 
     void goToStepIn(uint16_t step, uint16_t ms);
 
-    inline repeating_timer& getTimer() {
-        return timer;
-    }
-
-    inline uint16_t getMaxStep() {
+    [[nodiscard]] inline uint16_t getMaxStep() const {
         return maxStep;
     }
+
+    [[nodiscard]] inline uint16_t maxMicroStep() const {
+        return maxStep * microSteps.size() / 2;
+    }
+
+    [[nodiscard]] constexpr inline uint16_t singleStepSize() const {
+        return microSteps.size() / 2;
+    }
+
+    void makeStep();
 
 private:
     std::array<Step, 24> microSteps;
     uint8_t middleMicroStep;
-    int16_t actualStep = 0;
-    int16_t targetStep = 0;
-    int8_t actualMicroStep = 0;
+    uint16_t actualStep = 0;
+    uint16_t targetStep = 0;
     uint16_t maxStep = 157 * 2;
+    uint8_t stepsStep = 1;
+    uint16_t singleStepTime = 0;
     uint8_t pin1;
     uint8_t pin2;
     uint8_t pin3;
     uint8_t pin4;
     uint16_t wrap = 255;
+
+    uint64_t lastUpdateTime = 0;
+
+    mutex_t *mutex = nullptr;
 
     pwm_config pwmConfig;
 
@@ -63,18 +78,12 @@ private:
     PwmPin pwm3;
     PwmPin pwm4;
 
-    repeating_timer timer;
-
-    friend bool x27DriverCallback(repeating_timer_t * timer);
+    friend bool x27DriverCallback(repeating_timer_t *timer);
 
     void initPwm();
 
-    void initSinglePwm(PwmPin& pwmData,uint8_t pin);
-
-    bool makeStep();
+    void initSinglePwm(PwmPin &pwmData, uint8_t pin);
 };
-
-bool x27DriverCallback(repeating_timer_t * timer);
 
 
 #endif //MUDDC_X27STEPPERDRIVER_H
