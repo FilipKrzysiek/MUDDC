@@ -7,9 +7,9 @@
 #include "MUDDC/bitFunctions.h"
 
 bde::PwmEp::PwmEp(uint8_t pin, const VarPtrProxy<uint16_t> &raw_value,
-                    const std::map<uint16_t, uint16_t> &valuePoints) : slice(0), channel(0),
-                                                                       pin(pin),
-                                                                       rawValue(raw_value) {
+                  const std::map<uint16_t, uint16_t> &valuePoints) : slice(0), channel(0),
+                                                                     pin(pin),
+                                                                     rawValue(raw_value) {
     if (!valuePoints.contains(0)) {
         this->valuePoints.emplace_back(0, 0);
     }

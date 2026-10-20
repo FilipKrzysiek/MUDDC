@@ -37,6 +37,7 @@ void BaseController::cdcTask() {
 
             postTransmissionTask();
 
+            transmissionTimeDiff = board_millis() - lastTransmissionTime;
             lastTransmissionTime = board_millis();
         } else {
             //TODO protection if transfer start in middle

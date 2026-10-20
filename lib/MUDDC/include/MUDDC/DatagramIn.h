@@ -53,11 +53,11 @@ public:
 
     DatagramIn();
 
-    uint8_t * data();
+    uint8_t *data();
 
     std::array<uint8_t, 52> &dataArray();
 
-    [[nodiscard]] const uint8_t * data() const;
+    [[nodiscard]] const uint8_t *data() const;
 
     [[nodiscard]] constexpr uint32_t size() const;
 
@@ -71,6 +71,15 @@ public:
      * @return Indicator state
      */
     [[nodiscard]] bool indicatorState(Indicators indicatorIndex) const;
+
+    /**
+     * Get value from datagram of passed element
+     * @param datBit Index of indicator in datagram
+     * @return Indicator state
+     */
+    [[nodiscard]] inline bool indicatorState(bde::datBit_t datBit) const {
+        return indicatorState(static_cast<Indicators>(datBit));
+    }
 
     void setIndicatorState(Indicators indicatorIndex, bool state);
 
@@ -125,15 +134,15 @@ constexpr uint32_t DatagramIn::size() const {
     return rawData.size();
 }
 
-inline uint8_t * DatagramIn::data() {
+inline uint8_t *DatagramIn::data() {
     return rawData.data();
 }
 
-inline const uint8_t * DatagramIn::data() const {
+inline const uint8_t *DatagramIn::data() const {
     return rawData.data();
 }
 
-inline std::array<uint8_t, 52> & DatagramIn::dataArray() {
+inline std::array<uint8_t, 52> &DatagramIn::dataArray() {
     return rawData;
 }
 

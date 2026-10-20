@@ -58,6 +58,9 @@ public:
 
 
 protected:
+    static constexpr uint i2cTimeout_us = 400;
+    static constexpr uint i2cSleepBtwnTrans_us = 75;
+
     DatagramIn datagramIn;
     DatagramOut datagramOut;
     bde::I2cDevice expanderI2cLine;
@@ -68,6 +71,8 @@ protected:
     std::vector<bde::PwmEp> masterDevicePwm;
     std::vector<bde::ExpanderEp_8*> expanders;
     std::vector<bde::PiPicoExpanderEp*> piPicoExpanders;
+
+    uint32_t transmissionTimeDiff = 0;
 
     /**
      * Initialize I2C devices by set to all devices value 0 on write elements.
@@ -85,9 +90,6 @@ private:
 
     static constexpr uint32_t blinkOff_connected = 100;
     static constexpr uint32_t blinkOn_connected = 100;
-
-    static constexpr uint i2cTimeout_us = 400;
-    static constexpr uint i2cSleepBtwnTrans_us = 75;
 
     uint32_t blinkOff = blinkOff_notConnected;
     uint32_t blinkOn = blinkOn_notConnected;
