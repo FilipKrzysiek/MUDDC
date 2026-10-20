@@ -5,7 +5,7 @@ add_executable(MUDDC_ed72 src/main.cpp
         src/ED72.h
 )
 
-set(MUDDC_ed72_VERSION 0.0.8)
+set(MUDDC_ed72_VERSION 0.0.10)
 
 set_target_properties(MUDDC_ed72 PROPERTIES VERSION ${MUDDC_ed72_VERSION})
 
@@ -39,6 +39,7 @@ ExternalProject_Add(MUDDC_ed72_rp1
         SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib/PiPicoExpander
         BINARY_DIR "${CMAKE_BINARY_DIR}/rp1"
         CMAKE_ARGS -DSLAVE_ADDR=0x18
+                    -DI2C_FREQ=400000
                     "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH=${MUDDC_ed72_OUTPUT_DIR}"
         BUILD_COMMAND ${CMAKE_COMMAND} --build .
         INSTALL_COMMAND ""

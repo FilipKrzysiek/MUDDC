@@ -3,6 +3,7 @@
 //
 
 #include "ED72.h"
+#include <limits>
 #include "MUDDC/BaseDevicesAndEndpoint.h"
 #include <bsp/board_api.h>
 #include "hardware/adc.h"
@@ -11,6 +12,7 @@ ED72::ED72(const bde::I2cDevice &expanderI2cline, const bde::I2cDevice &communic
     expanderI2cline, communicationI2CLine) {
     configureMasterDevice();
     configureExpanders();
+    configureManometerExpander();
 
     ED72::setup();
 }
@@ -33,6 +35,7 @@ void ED72::postReceiveAndReadDevTask() {
     processBrakeValve();
     processLamps();
     processTestLamps();
+    sendDataToManometers();
 }
 
 void ED72::initialize() {
@@ -60,10 +63,10 @@ void ED72::configureMasterDevice() {
     addMasterDeviceGpioInput(22, *DatOutSw::DirCntr_Wk6, true);
     addMasterDeviceGpioInput(26, *DatOutSw::HornHighTone, true);
 
-    addMasterDevicePwm(18, datagramIn.hvCurrent1(), {});
-    addMasterDevicePwm(19, datagramIn.hvVoltage(), {});
-    addMasterDevicePwm(20, VarPtrProxy<uint16_t>(reinterpret_cast<uint8_t *>(&lvCurrent)), {});
-    addMasterDevicePwm(21, datagramIn.lvVoltage(), {});
+    // addMasterDevicePwm(18, datagramIn.hvCurrent1(), {});
+    // addMasterDevicePwm(19, datagramIn.hvVoltage(), {});
+    // addMasterDevicePwm(20, VarPtrProxy<uint16_t>(reinterpret_cast<uint8_t *>(&lvCurrent)), {});
+    // addMasterDevicePwm(21, datagramIn.lvVoltage(), {});
 }
 
 void ED72::configureExpanders() {
@@ -123,6 +126,17 @@ void ED72::configureExpanders() {
                                 *DatOutSw::DirCntr_Wk7, *DatOutSw::DirCntr_Wk9
                             },
                             bde::CommunicationDir::Read);
+}
+
+void ED72::configureManometerExpander() {
+    brakeManometer = ValueEpMano({{0, 0}, {std::numeric_limits<uint16_t>::max(), 268}});
+    brakePipe = ValueEpMano({{0, 0}, {std::numeric_limits<uint16_t>::max(), 268}});
+    brakeTank = ValueEpMano({{0, 0}, {std::numeric_limits<uint16_t>::max(), 268}});
+
+    gaugeVLV = ValueEpGauge();
+    gaugeVHV = ValueEpGauge();
+    gaugeCTE = ValueEpGauge();
+    gaugeCLV = ValueEpGaugePM({{-255, -255}, {0, 0}, {255, 255}}, -255, 255);
 }
 
 void ED72::masterController() {
@@ -221,9 +235,12 @@ void ED72::directionController() {
 
 void ED72::simulateBatteryCurrent() {
     if (datagramIn.batteryState()) {
-        lvCurrent = bde::PwmEp::fromPercentage(3);
+        if (!datagramIn.indicatorState(*VirtualDatagramIn::ConverterOff))
+            lvCurrent = gaugeCLV.calculateValue(6);
+        else
+            lvCurrent = gaugeCLV.calculateValue(-6);
     } else {
-        lvCurrent = 0;
+        lvCurrent = gaugeCLV.calculateValue(0);
     }
 }
 
@@ -236,7 +253,6 @@ void ED72::processBrakeValve() {
     }
 
     datagramOut.setTrainBrake(sum / measurments);
-
 }
 
 void ED72::processLamps() {
@@ -295,6 +311,34 @@ void ED72::processTestLamps() {
         datagramIn.setIndicatorState(DatagramIn::DoorRightAllowed, true);
         datagramIn.setIndicatorState(DatagramIn::DoorRightOpened, true);
     }
+}
+
+void ED72::sendDataToManometers() {
+    manometersExpanderData[0] = std::min<uint16_t>(transmissionTimeDiff / 10 + 3, 255);
+
+    auto tmp = brakeManometer.calculateValue(datagramIn.breakPress());
+    manometersExpanderData[1] = (tmp >> 8) & 0xff;
+    manometersExpanderData[2] = tmp & 0xff;
+
+    tmp = brakePipe.calculateValue(datagramIn.pipePress());
+    manometersExpanderData[3] = (tmp >> 8) & 0xff;
+    manometersExpanderData[4] = tmp & 0xff;
+
+    tmp = brakeTank.calculateValue(datagramIn.tankPress());
+    manometersExpanderData[5] = (tmp >> 8) & 0xff;
+    manometersExpanderData[6] = tmp & 0xff;
+
+    manometersExpanderData[7] = gaugeVLV.calculateValue(datagramIn.lvVoltage());
+    manometersExpanderData[8] = gaugeVHV.calculateValue(datagramIn.hvVoltage());
+    manometersExpanderData[9] = gaugeCTE.calculateValue(datagramIn.hvCurrent1());
+
+    tmp = lvCurrent;
+    manometersExpanderData[10] = (tmp >> 8) & 0xff;
+    manometersExpanderData[11] = tmp & 0xff;
+
+    i2c_write_timeout_us(communicationI2cLine.device, 0x16, manometersExpanderData.data(), manometersExpanderData.size(),
+                         false, i2cTimeout_us);
+    sleep_us(i2cSleepBtwnTrans_us);
 }
 
 //TODO think about keep information about expanders data in one place

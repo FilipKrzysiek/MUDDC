@@ -7,7 +7,7 @@ int main() {
     board_init();
     tusb_init();
 
-    ED72 veh({i2c0, 12, 13, 100 * 1000}, {i2c1, 14, 15, 200 * 1000});
+    ED72 veh({i2c0, 12, 13, 100 * 1000}, {i2c1, 14, 15, 400 * 1000});
     veh.initialize();
 
     // ReSharper disable once CppDFAEndlessLoop
@@ -17,6 +17,7 @@ int main() {
         veh.cdcTask();
 
         sleep_ms(1);
+
     }
     return 0;
 }

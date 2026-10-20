@@ -86,13 +86,28 @@ private:
     bde::ExpanderEp_8 ex2;
     bde::PiPicoExpanderEp rp1;
 
-    uint16_t lvCurrent = 0;
+    int16_t lvCurrent = 0;
 
     std::array<uint8_t, 2> prevMasterCtrl = {0, 0};
+    std::array<uint8_t, 12> manometersExpanderData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     bool prevOutside = false;
+
+    using ValueEpMano = bde::ValueEp<uint16_t, uint16_t>;
+    using ValueEpGauge = bde::ValueEp<uint8_t, uint8_t>;
+    using ValueEpGaugePM = bde::ValueEp<int16_t, int16_t>;
+
+    ValueEpMano brakeManometer;
+    ValueEpMano brakePipe;
+    ValueEpMano brakeTank;
+    ValueEpGauge gaugeVLV;
+    ValueEpGauge gaugeVHV;
+    ValueEpGauge gaugeCTE;
+    ValueEpGaugePM gaugeCLV;
 
     void configureMasterDevice();
     void configureExpanders();
+
+    void configureManometerExpander();
 
     void masterController();
     void directionController();
@@ -104,6 +119,8 @@ private:
     void processLamps();
 
     void processTestLamps();
+
+    void sendDataToManometers();
 };
 
 constexpr bde::datBit_t operator*(ED72::DatOutSw enumValue) {
