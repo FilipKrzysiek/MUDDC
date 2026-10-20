@@ -1,9 +1,4 @@
-ramka in
-
-- manometr 1
-- manometr 2
-- manometr 3
-- czas
+# Manometers ED72 expansion module
 
 ## Frame
 
@@ -19,8 +14,8 @@ ramka in
 |  7   |                V-LV                |
 |  8   |                V-HV                |
 |  9   |                C-TE                |
-|  10  |          1st byte od A-NN          |
-|  11  |          2nd byte od A-NN          |
+|  10  |          1st byte od C-LV          |
+|  11  |          2nd byte od C-LV          |
 
 ## Pinout
 
@@ -42,16 +37,16 @@ ramka in
 | M3-IN1 |      GP10       | 14  |                    | 27  |      GP21       |          |
 |  V-LV  |      GP11       | 15  |                    | 26  |      GP20       |          |
 | M3-IN2 |      GP12       | 16  |                    | 25  |      GP19       |          |
-|  C-LV  |      GP13,      | 17  |                    | 24  |      GP18       | A-NN.Ref |
+|  C-LV  |      GP13,      | 17  |                    | 24  |      GP18       | C-LV.Ref |
 |        |     **GND**     | 18  |                    | 23  |     **GND**     |          |
-| M3-IN3 |      GP14       | 19  |                    | 22  |      GP17       |   V-TE   |
+| M3-IN3 |      GP14       | 19  |                    | 22  |      GP17       |   C-TE   |
 |  V-HV  |      GP15       | 20  |                    | 21  |      GP16       |  M3-IN4  |
 
-* M1 - manometer 1
-* M2 - manometer 2
-* M3 - manometer 3
-* V-LV - Woltomierz NN
-* C-ST - amperomierz silników trakcyjnych
-* V-HV - Woltomierz WN
-* C-LV - amperomierz NN
-* C-LV.Ref - referencja dla amperomierza NN
+* M1 - manometer 1 for brakes 
+* M2 - manometer 2 for main pipe
+* M3 - manometer 3 for tank pressure
+* V-LV - voltmeter low voltage
+* C-TE - ammeter traction engine
+* V-HV - voltmeter high voltage
+* C-LV - ammeter low voltage
+* C-LV.Ref - reference for low voltage ammeter
