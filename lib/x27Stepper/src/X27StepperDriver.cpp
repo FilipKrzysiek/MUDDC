@@ -57,6 +57,9 @@ void X27StepperDriver::prepareOnlyBack(uint8_t time_s, uint16_t fromStep) {
 }
 
 void X27StepperDriver::goToStepIn(uint16_t step, uint16_t ms) {
+    if (step > maxStep) {
+        return;
+    }
     mutex_enter_blocking(mutex);
     targetStep = step * singleStepSize();
     uint16_t stepDiff = std::abs(actualStep - targetStep);

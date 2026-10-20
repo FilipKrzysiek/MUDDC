@@ -11,6 +11,10 @@
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
 
+struct PwmPin {
+    uint slice = 0;
+    uint channel = 0;
+};
 
 class X27StepperDriver {
 public:
@@ -22,11 +26,6 @@ public:
     };
 
     inline static uint16_t frequency = 30'000;
-
-    struct PwmPin {
-        uint slice = 0;
-        uint channel = 0;
-    };
 
     X27StepperDriver(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, mutex_t *mutex, uint16_t maxStep = 315,
                      uint16_t wrap = 255);
